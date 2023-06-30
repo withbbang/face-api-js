@@ -331,7 +331,13 @@ module.exports = function (webpackEnv) {
           babelRuntimeEntryHelpers,
           babelRuntimeRegenerator
         ])
-      ]
+      ],
+      // TODO: 👇️👇️👇️ To solve error, <Module not found: Can't resolve 'fs' error> and browser in package.json is too
+      fallback: {
+        fs: false,
+        os: false,
+        path: false
+      }
     },
     module: {
       strictExportPresence: true,
@@ -339,7 +345,10 @@ module.exports = function (webpackEnv) {
         // Handle node_modules packages that contain sourcemaps
         shouldUseSourceMap && {
           enforce: 'pre',
-          exclude: /@babel(?:\/|\\{1,2})runtime/,
+          exclude: [
+            /@babel(?:\/|\\{1,2})runtime/,
+            /\/node_modules\/face-api.*/
+          ],
           test: /\.(js|mjs|jsx|ts|tsx|css)$/,
           loader: require.resolve('source-map-loader')
         },
