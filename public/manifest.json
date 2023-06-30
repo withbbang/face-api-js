@@ -1,0 +1,14 @@
+{
+  "short_name": "CRA Typescript Boilerplate",
+  "name": "Create React App Typescript Boilerplate",
+  "icons": [
+    {
+      "src": "logo.svg",
+      "type": "svg"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#000000",
+  "background_color": "#ffffff"
+}
