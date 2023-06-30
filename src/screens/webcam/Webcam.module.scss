@@ -1,0 +1,25 @@
+.wrap {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  @include background($more-light);
+
+  .contents {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    > video {
+      position: absolute;
+      object-fit: contain;
+    }
+
+    > canvas {
+      position: absolute;
+    }
+  }
+}
