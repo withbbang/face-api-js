@@ -1,17 +1,19 @@
-# Create React App Boilerplate for Typescript
+# Facial Recognition Project Using Face-Api-JS
+
+[Reference](https://github.com/justadudewhohacks/face-api.js)
 
 ### 프로젝트 목적
 
-1. CRA Typescript 최소 세팅을 위함
+1. 브라우저 상에서 API를 통하여 안면인식을 이용한 프로젝트
 
 ---
 
 ### 제공하는 기능
 
-- redux toolkit을 이용하여 상태관리
-- REACT_APP_MODE 환경변수 기반으로 build 작업 변화
-- scripts내에 build 모드에 따라 babel을 이용하여 console 제거 유무 판단
-- global.d.ts를 이용하여 typescript에서 지원하지 않는 타입 설정 가능
+-
+-
+-
+-
 
 ---
 
