@@ -14,28 +14,17 @@ const WebcamCT = ({
 
   useEffect(() => {
     (async () => {
-      //   handleLoaderTrue();
-      //   try {
-      //     await handleLoadModels();
-      //     await handleStartVideo();
-      //     await handleDisplayDetectionResult();
-      //   } catch (e: any) {
-      //     throw Error(e);
-      //   } finally {
-      //     handleLoaderFalse();
-      //   }
-
-      //   handleLoaderTrue();
-      //   await handleLoadModels();
-      //   await handleStartVideo();
-      //   await handleDisplayDetectionResult();
-      //   handleLoaderFalse();
-
       handleLoaderTrue();
-      handleLoadModels()
-        .then(() => handleStartVideo())
-        .then(() => handleDisplayDetectionResult())
-        .finally(() => handleLoaderFalse());
+      try {
+        await handleStartVideo();
+        await handleLoadModels();
+        await handleDisplayDetectionResult();
+      } catch (e: any) {
+        console.error(e);
+        throw Error(e);
+      } finally {
+        handleLoaderFalse();
+      }
     })();
   }, []);
 
@@ -188,29 +177,30 @@ const WebcamCT = ({
     //   displaySize = { width, height };
     // }
 
-    // FIXME: 개씨발에러 toNetInput - expected media to be of type HTMLImageElement | HTMLVideoElement | HTMLCanvasElement | tf.Tensor3D, or to be an element id
     const canvas = document.getElementById('canvas') as HTMLCanvasElement;
 
     faceapi.matchDimensions(canvas, displaySize);
 
     /* Display detected face bounding boxes */
-    const detections = await faceapi.detectAllFaces(video);
+    const detections = await faceapi.detectAllFaces('video');
+
     // resize the detected boxes in case your displayed image has a different size than the original
     const resizedDetections = faceapi.resizeResults(detections, displaySize);
+
     // draw detections into the canvas
     faceapi.draw.drawDetections(canvas, resizedDetections);
 
     /* Display face landmarks */
     const detectionsWithLandmarks = await faceapi
-      .detectAllFaces(video)
+      .detectAllFaces('video')
       .withFaceLandmarks();
+
     // resize the detected boxes and landmarks in case your displayed image has a different size than the original
     const resizedResults = faceapi.resizeResults(
       detectionsWithLandmarks,
       displaySize
     );
-    // draw detections into the canvas
-    faceapi.draw.drawDetections(canvas, resizedResults);
+
     // draw the landmarks into the canvas
     faceapi.draw.drawFaceLandmarks(canvas, resizedResults);
 
