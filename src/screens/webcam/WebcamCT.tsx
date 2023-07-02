@@ -2,6 +2,8 @@ import React, { useEffect, useRef } from 'react';
 import * as faceapi from 'face-api.js';
 import { CommonState } from 'middlewares/reduxToolkits/commonSlice';
 import WebcamPT from './WebcamPT';
+import { MtcnnOptions } from 'face-api.js';
+import { CustomMtcnnOptions } from 'modules/utils';
 
 const MODEL_URL = '/models';
 
@@ -11,6 +13,7 @@ const WebcamCT = ({
 }: typeWebcamCT): JSX.Element => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const video: any = document.getElementById('video') as HTMLVideoElement;
+  const canvas = document.getElementById('video') as HTMLCanvasElement;
 
   useEffect(() => {
     (async () => {
@@ -18,7 +21,6 @@ const WebcamCT = ({
       try {
         await handleStartVideo();
         await handleLoadModels();
-        await handleDisplayDetectionResult();
       } catch (e: any) {
         console.error(e);
         throw Error(e);
@@ -40,9 +42,45 @@ const WebcamCT = ({
    * facial recognition 모델 로드
    */
   const handleLoadModels = async () => {
-    await faceapi.loadSsdMobilenetv1Model(MODEL_URL);
-    await faceapi.loadFaceLandmarkModel(MODEL_URL);
+    await faceapi.loadMtcnnModel(MODEL_URL);
     await faceapi.loadFaceRecognitionModel(MODEL_URL);
+  };
+
+  /**
+   * webcam 얼굴 추적 인식 기능 초기화
+   */
+  const handleInitTrack = async () => {
+    const mtcnnForwardParams = new CustomMtcnnOptions();
+
+    const mtcnnResults = await faceapi.mtcnn(video, mtcnnForwardParams);
+
+    mtcnnResults.forEach(handleDrawDetection);
+    // FIXME: 바닐라 js 작업해야할지 결정해야함
+    faceapi.drawLandmarks(
+      'overlay',
+      mtcnnResults.map((res) => res.faceLandmarks),
+      { lineWidth: 4, color: 'red' }
+    );
+  };
+
+  const handleDrawDetection = (
+    result: faceapi.WithFaceLandmarks<
+      {
+        detection: faceapi.FaceDetection;
+      },
+      faceapi.FaceLandmarks5
+    >
+  ) => {
+    const { x, y, width, height } = result.detection.box;
+
+    const context = canvas.getContext('2d') as CanvasRenderingContext2D;
+
+    // 얼굴 경계 상자 그리기
+    context.beginPath();
+    context.lineWidth = 2;
+    context.strokeStyle = 'red';
+    context.rect(x, y, width, height);
+    context.stroke();
   };
 
   /**
