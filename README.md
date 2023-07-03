@@ -1,6 +1,7 @@
 # Facial Recognition Project Using Face-Api-JS
 
-[Reference](https://github.com/justadudewhohacks/face-api.js)
+[Reference1](https://github.com/justadudewhohacks/face-api.js)
+[Reference2](https://javascript.plainenglish.io/face-detection-just-using-faceapijs-d03d737e87be)
 
 ### 프로젝트 목적
 
@@ -13,9 +14,7 @@
 -
 -
 -
--
-
----
+- ***
 
 ### 프로젝트 구조
 

@@ -13,14 +13,13 @@ const WebcamCT = ({
 }: typeWebcamCT): JSX.Element => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const video: any = document.getElementById('video') as HTMLVideoElement;
-  const canvas = document.getElementById('video') as HTMLCanvasElement;
 
   useEffect(() => {
     (async () => {
       handleLoaderTrue();
       try {
-        await handleStartVideo();
         await handleLoadModels();
+        await handleStartVideo();
       } catch (e: any) {
         console.error(e);
         throw Error(e);
@@ -42,45 +41,50 @@ const WebcamCT = ({
    * facial recognition 모델 로드
    */
   const handleLoadModels = async () => {
-    await faceapi.loadMtcnnModel(MODEL_URL);
-    await faceapi.loadFaceRecognitionModel(MODEL_URL);
+    await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+    await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
+    await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
+    await faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL);
   };
 
   /**
-   * webcam 얼굴 추적 인식 기능 초기화
+   * webcam onPlay 시 얼굴인식 박스 및 landmark 그리기
    */
-  const handleInitTrack = async () => {
-    const mtcnnForwardParams = new CustomMtcnnOptions();
+  const handleOnPlay = () => {
+    const canvas = faceapi.createCanvasFromMedia(video);
+    const contents = document.getElementById('contents');
+    contents && contents.append(canvas);
 
-    const mtcnnResults = await faceapi.mtcnn(video, mtcnnForwardParams);
+    const displayValues = {
+      width: 640,
+      height: 480
+    };
 
-    mtcnnResults.forEach(handleDrawDetection);
-    // FIXME: 바닐라 js 작업해야할지 결정해야함
-    faceapi.drawLandmarks(
-      'overlay',
-      mtcnnResults.map((res) => res.faceLandmarks),
-      { lineWidth: 4, color: 'red' }
-    );
-  };
+    faceapi.matchDimensions(canvas, displayValues);
 
-  const handleDrawDetection = (
-    result: faceapi.WithFaceLandmarks<
-      {
-        detection: faceapi.FaceDetection;
-      },
-      faceapi.FaceLandmarks5
-    >
-  ) => {
-    const { x, y, width, height } = result.detection.box;
+    setInterval(async () => {
+      const detections = await faceapi
+        .detectAllFaces(video, new faceapi.TinyFaceDetectorOptions())
+        .withFaceLandmarks() // detect landmark
+        .withFaceDescriptors(); // detect descriptor around face
 
-    const context = canvas.getContext('2d') as CanvasRenderingContext2D;
+      // ### Input in to console result's detection
+      // detections.map(console.log)
 
-    // 얼굴 경계 상자 그리기
-    context.beginPath();
-    context.lineWidth = 2;
-    context.strokeStyle = 'red';
-    context.rect(x, y, width, height);
-    context.stroke();
+      const resizedDetections = faceapi.resizeResults(
+        detections,
+        displayValues
+      );
+
+      if (canvas) {
+        const context = canvas.getContext('2d');
+        if (context) {
+          context.clearRect(0, 0, canvas.width, canvas.height);
+          faceapi.draw.drawDetections(canvas, resizedDetections);
+          faceapi.draw.drawFaceLandmarks(canvas, resizedDetections);
+        }
+      }
+    }, 100);
   };
 
   /**
@@ -256,7 +260,7 @@ const WebcamCT = ({
     // faceapi.draw.drawFaceExpressions(canvas, resizedResults, minProbability)
   };
 
-  return <WebcamPT videoRef={videoRef} />;
+  return <WebcamPT videoRef={videoRef} onPlay={handleOnPlay} />;
 };
 
 interface typeWebcamCT extends CommonState {
