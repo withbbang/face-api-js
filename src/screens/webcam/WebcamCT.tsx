@@ -56,8 +56,8 @@ const WebcamCT = ({
     contents && contents.append(canvas);
 
     const displayValues = {
-      width: 640,
-      height: 480
+      width: canvas.width,
+      height: canvas.height
     };
 
     faceapi.matchDimensions(canvas, displayValues);
