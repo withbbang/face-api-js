@@ -2,8 +2,6 @@ import React, { useEffect, useRef } from 'react';
 import * as faceapi from 'face-api.js';
 import { CommonState } from 'middlewares/reduxToolkits/commonSlice';
 import WebcamPT from './WebcamPT';
-import { MtcnnOptions } from 'face-api.js';
-import { CustomMtcnnOptions } from 'modules/utils';
 
 const MODEL_URL = '/models';
 
