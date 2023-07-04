@@ -46,7 +46,7 @@ const WebcamCT = ({
   };
 
   /**
-   * webcam onPlay 시 얼굴인식 박스 및 landmark 그리기
+   * webcam onPlay 시 얼굴인식 박스 및 landmark, 감정 그리기
    */
   const handleOnPlay = () => {
     const canvas = faceapi.createCanvasFromMedia(video);
@@ -64,10 +64,7 @@ const WebcamCT = ({
       const detections = await faceapi
         .detectAllFaces(video, new faceapi.TinyFaceDetectorOptions())
         .withFaceLandmarks() // detect landmark
-        .withFaceDescriptors(); // detect descriptor around face
-
-      // ### Input in to console result's detection
-      // detections.map(console.log)
+        .withFaceExpressions(); // detect face expression
 
       const resizedDetections = faceapi.resizeResults(
         detections,
@@ -80,6 +77,7 @@ const WebcamCT = ({
           context.clearRect(0, 0, canvas.width, canvas.height);
           faceapi.draw.drawDetections(canvas, resizedDetections);
           faceapi.draw.drawFaceLandmarks(canvas, resizedDetections);
+          faceapi.draw.drawFaceExpressions(canvas, resizedDetections);
         }
       }
     }, 100);
