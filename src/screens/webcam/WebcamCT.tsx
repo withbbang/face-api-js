@@ -47,223 +47,54 @@ const WebcamCT = ({
   };
 
   /**
-   * webcam onPlay 시 얼굴인식 박스 및 landmark, 감정 그리기
+   * webcam onPlay 시 얼굴인식 박스 및 landmark, 감정, 나이, 성별 감지
    */
   const handleOnPlay = () => {
-    let predictedAges: Array<any> = [];
-    const canvas = faceapi.createCanvasFromMedia(video);
+    const canvas = faceapi.createCanvasFromMedia(video); // 얼굴 인식 판별을 위한 canvas 생성
     const contents = document.getElementById('contents');
     contents && contents.append(canvas);
 
+    // canvas = video 사이즈 동적으로 맞추기
     const displayValues = {
       width: canvas.width,
       height: canvas.height
     };
 
+    // video, canvas 동기화
     faceapi.matchDimensions(canvas, displayValues);
 
     setInterval(async () => {
+      // 얼굴 인식 기능 인스턴스 생성
       const detections = await faceapi
-        .detectAllFaces(video, new faceapi.TinyFaceDetectorOptions())
-        .withFaceLandmarks() // detect landmark
-        .withFaceExpressions() // detect face expression
-        .withAgeAndGender();
+        .detectAllFaces(video, new faceapi.TinyFaceDetectorOptions()) // 얼굴 박스 가져오기
+        .withFaceLandmarks() // 랜드마크 가져오기(눈코입 점)
+        .withFaceExpressions() // 얼굴 감정 예측
+        .withAgeAndGender(); // 나이, 성별 예측
 
+      // 사이즈 변형 감지
       const resizedDetections = faceapi.resizeResults(
         detections,
         displayValues
       );
 
+      // 실제 얼굴 감지 그림 그리기
       if (canvas) {
         const context = canvas.getContext('2d');
         if (context) {
           context.clearRect(0, 0, canvas.width, canvas.height);
-          faceapi.draw.drawDetections(canvas, resizedDetections);
-          faceapi.draw.drawFaceLandmarks(canvas, resizedDetections);
-          faceapi.draw.drawFaceExpressions(canvas, resizedDetections);
+          faceapi.draw.drawDetections(canvas, resizedDetections); // 얼굴 박스 그리기
+          faceapi.draw.drawFaceLandmarks(canvas, resizedDetections); // 랜드마크 그리기
+          faceapi.draw.drawFaceExpressions(canvas, resizedDetections); // 감정 그리기
           resizedDetections.forEach((detection) => {
             const box = detection.detection.box;
             const drawBox = new faceapi.draw.DrawBox(box, {
               label: Math.round(detection.age) + ' year old ' + detection.gender
             });
             drawBox.draw(canvas);
-          });
+          }); // 나이 및 성별 그리기
         }
       }
     }, 100);
-  };
-
-  /**
-   * facial recognition
-   */
-  const handleDetectFace = async () => {
-    // 얼굴이 다수일 때
-    // const detections = await faceapi
-    //   .detectAllFaces(video)
-    //   .withFaceLandmarks()
-    //   .withFaceDescriptors();
-
-    // 얼굴이 한개일 때
-    const detection = await faceapi
-      .detectSingleFace(video)
-      .withFaceLandmarks()
-      .withFaceDescriptor();
-
-    // SsdMobilenetv1Options 모델 사용
-    const detection1 = await faceapi.detectAllFaces(
-      video,
-      new faceapi.SsdMobilenetv1Options()
-    );
-
-    // TinyFaceDetectorOptions 모델 사용
-    // const detection2 = await faceapi.detectAllFaces(
-    //   video,
-    //   new faceapi.TinyFaceDetectorOptions()
-    // );
-  };
-
-  /**
-   * 얼굴 랜드마크들(얼굴의 특징 점들) 받아오기
-   */
-  const handleFaceLandmarks = async () => {
-    // 얼굴이 다수일 때
-    // const detectionsWithLandmarks = await faceapi.detectAllFaces(video).withFaceLandmarks();
-
-    // 얼굴이 한개일 때
-    const detectionWithLandmarks = await faceapi
-      .detectSingleFace(video)
-      .withFaceLandmarks();
-  };
-
-  /**
-   * 얼굴 인식 값들 계산하기
-   */
-  const handleComputeFaceDescriptors = async () => {
-    // 얼굴이 다수일 때
-    // const results = await faceapi.detectAllFaces(video).withFaceLandmarks().withFaceDescriptors();
-
-    // 얼굴이 한개일 때
-    const result = await faceapi
-      .detectSingleFace(video)
-      .withFaceLandmarks()
-      .withFaceDescriptor();
-  };
-
-  /**
-   * 얼굴 표정 인식
-   */
-  const handleRecognizeFaceExpressions = async () => {
-    // 얼굴이 다수일 때
-    // const detectionsWithExpressions = await faceapi.detectAllFaces(video).withFaceLandmarks().withFaceExpressions();
-
-    // 얼굴이 한개일 때
-    const detectionWithExpressions = await faceapi
-      .detectSingleFace(video)
-      .withFaceLandmarks()
-      .withFaceExpressions();
-  };
-
-  /**
-   * 나이 및 성별 검사
-   */
-  const handleEstimateAgeGender = async () => {
-    // 얼굴이 다수일 때
-    // const detectionsWithAgeAndGender = await faceapi.detectAllFaces(video).withFaceLandmarks().withAgeAndGender();
-
-    // 얼굴이 한개일 때
-    const detectionWithAgeAndGender = await faceapi
-      .detectSingleFace(video)
-      .withFaceLandmarks()
-      .withAgeAndGender();
-  };
-
-  /**
-   * 얼굴 매칭하기
-   */
-  const handleFaceMatching = async () => {
-    // 기준이 되는 사진에 얼굴들 인식
-    // const results = await faceapi
-    //   .detectAllFaces(groupPhoto)
-    //   .withFaceLandmarks()
-    //   .withFaceDescriptors();
-    //
-    // if (!results.length) {
-    //   return;
-    // }
-    //
-    // 매칭 객체 생성
-    // const faceMatcher = new faceapi.FaceMatcher(results);
-    //
-    // 얼굴이 다수일 때
-    // const multipleResults = await faceapi
-    //   .detectAllFaces(video)
-    //   .withFaceLandmarks()
-    //   .withFaceDescriptors();
-    //
-    // multipleResults.forEach((fd) => {
-    //   const bestMatch = faceMatcher.findBestMatch(fd.descriptor);
-    //   console.log(bestMatch.toString());
-    // });
-    //
-    // 얼굴이 한개일 때
-    // const singleResult = await faceapi
-    //   .detectSingleFace(video)
-    //   .withFaceLandmarks()
-    //   .withFaceDescriptor();
-    // if (singleResult) {
-    //   const bestMatch = faceMatcher.findBestMatch(singleResult.descriptor);
-    //   console.log(bestMatch.toString());
-    // }
-  };
-
-  const handleDisplayDetectionResult = async () => {
-    // resize the overlay canvas to the input dimensions
-    // TODO: 동적으로 사이즈 설정해야함
-    let displaySize = { width: 640, height: 480 };
-    // if (videoRef.current) {
-    //   const { width, height } = videoRef.current;
-    //   displaySize = { width, height };
-    // }
-
-    const canvas = document.getElementById('canvas') as HTMLCanvasElement;
-
-    faceapi.matchDimensions(canvas, displaySize);
-
-    /* Display detected face bounding boxes */
-    const detections = await faceapi.detectAllFaces('video');
-
-    // resize the detected boxes in case your displayed image has a different size than the original
-    const resizedDetections = faceapi.resizeResults(detections, displaySize);
-
-    // draw detections into the canvas
-    faceapi.draw.drawDetections(canvas, resizedDetections);
-
-    /* Display face landmarks */
-    const detectionsWithLandmarks = await faceapi
-      .detectAllFaces('video')
-      .withFaceLandmarks();
-
-    // resize the detected boxes and landmarks in case your displayed image has a different size than the original
-    const resizedResults = faceapi.resizeResults(
-      detectionsWithLandmarks,
-      displaySize
-    );
-
-    // draw the landmarks into the canvas
-    faceapi.draw.drawFaceLandmarks(canvas, resizedResults);
-
-    /* Display face expression results */
-    // const detectionsWithExpressions = await faceapi
-    //   .detectAllFaces(video)
-    //   .withFaceLandmarks()
-    //   .withFaceExpressions()
-    // resize the detected boxes and landmarks in case your displayed image has a different size than the original
-    // const resizedResults = faceapi.resizeResults(detectionsWithExpressions, displaySize)
-    // draw detections into the canvas
-    // faceapi.draw.drawDetections(canvas, resizedResults)
-    // draw a textbox displaying the face expressions with minimum probability into the canvas
-    // const minProbability = 0.05
-    // faceapi.draw.drawFaceExpressions(canvas, resizedResults, minProbability)
   };
 
   return <WebcamPT videoRef={videoRef} onPlay={handleOnPlay} />;
