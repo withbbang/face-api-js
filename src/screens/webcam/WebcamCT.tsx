@@ -43,12 +43,14 @@ const WebcamCT = ({
     await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
     await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
     await faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL);
+    await faceapi.nets.ageGenderNet.loadFromUri(MODEL_URL);
   };
 
   /**
    * webcam onPlay 시 얼굴인식 박스 및 landmark, 감정 그리기
    */
   const handleOnPlay = () => {
+    let predictedAges: Array<any> = [];
     const canvas = faceapi.createCanvasFromMedia(video);
     const contents = document.getElementById('contents');
     contents && contents.append(canvas);
@@ -64,7 +66,8 @@ const WebcamCT = ({
       const detections = await faceapi
         .detectAllFaces(video, new faceapi.TinyFaceDetectorOptions())
         .withFaceLandmarks() // detect landmark
-        .withFaceExpressions(); // detect face expression
+        .withFaceExpressions() // detect face expression
+        .withAgeAndGender();
 
       const resizedDetections = faceapi.resizeResults(
         detections,
@@ -78,6 +81,13 @@ const WebcamCT = ({
           faceapi.draw.drawDetections(canvas, resizedDetections);
           faceapi.draw.drawFaceLandmarks(canvas, resizedDetections);
           faceapi.draw.drawFaceExpressions(canvas, resizedDetections);
+          resizedDetections.forEach((detection) => {
+            const box = detection.detection.box;
+            const drawBox = new faceapi.draw.DrawBox(box, {
+              label: Math.round(detection.age) + ' year old ' + detection.gender
+            });
+            drawBox.draw(canvas);
+          });
         }
       }
     }, 100);
