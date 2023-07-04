@@ -69,7 +69,8 @@ const WebcamCT = ({
         .detectAllFaces(video, new faceapi.TinyFaceDetectorOptions()) // 얼굴 박스 가져오기
         .withFaceLandmarks() // 랜드마크 가져오기(눈코입 점)
         .withFaceExpressions() // 얼굴 감정 예측
-        .withAgeAndGender(); // 나이, 성별 예측
+        .withAgeAndGender() // 나이, 성별 예측
+        .withFaceDescriptors();
 
       // 사이즈 변형 감지
       const resizedDetections = faceapi.resizeResults(
@@ -94,7 +95,7 @@ const WebcamCT = ({
           }); // 나이 및 성별 그리기
         }
       }
-    }, 100);
+    }, 1000);
   };
 
   return <WebcamPT videoRef={videoRef} onPlay={handleOnPlay} />;
