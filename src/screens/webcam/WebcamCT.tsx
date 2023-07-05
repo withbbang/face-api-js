@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import * as faceapi from 'face-api.js';
 import { CommonState } from 'middlewares/reduxToolkits/commonSlice';
 import WebcamPT from './WebcamPT';
+import { AnchorPosition } from 'face-api.js/build/commonjs/draw/DrawTextField';
 
 const MODEL_URL = '/models';
 
@@ -39,6 +40,7 @@ const WebcamCT = ({
    * facial recognition 모델 로드
    */
   const handleLoadModels = async () => {
+    await faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL);
     await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
     await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
     await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
@@ -49,7 +51,13 @@ const WebcamCT = ({
   /**
    * webcam onPlay 시 얼굴인식 박스 및 landmark, 감정, 나이, 성별 감지
    */
-  const handleOnPlay = () => {
+  const handleOnPlay = async () => {
+    const breads = [
+      'Bread',
+      'BreadWithGlasses',
+      'SmilingBread',
+      'SmilingBreadWithGlasses'
+    ];
     const canvas = faceapi.createCanvasFromMedia(video); // 얼굴 인식 판별을 위한 canvas 생성
     const contents = document.getElementById('contents');
     contents && contents.append(canvas);
@@ -63,6 +71,27 @@ const WebcamCT = ({
     // video, canvas 동기화
     faceapi.matchDimensions(canvas, displayValues);
 
+    const labeledFaceDescriptors = await Promise.all(
+      breads.map(async (bread) => {
+        // fetch image data from urls and convert blob to HTMLImage element
+        const imgUrl = `/images/${bread}.jpeg`;
+        const img = await faceapi.fetchImage(imgUrl);
+
+        // detect the face with the highest score in the image and compute it's landmarks and face descriptor
+        const fullFaceDescription = await faceapi
+          .detectSingleFace(img)
+          .withFaceLandmarks()
+          .withFaceDescriptor();
+
+        if (!fullFaceDescription) {
+          throw new Error(`no faces detected for ${bread}`);
+        }
+
+        const faceDescriptors = [fullFaceDescription.descriptor];
+        return new faceapi.LabeledFaceDescriptors(bread, faceDescriptors);
+      })
+    );
+
     setInterval(async () => {
       // 얼굴 인식 기능 인스턴스 생성
       const detections = await faceapi
@@ -71,6 +100,11 @@ const WebcamCT = ({
         .withFaceExpressions() // 얼굴 감정 예측
         .withAgeAndGender() // 나이, 성별 예측
         .withFaceDescriptors();
+
+      const faceMatcher = new faceapi.FaceMatcher(labeledFaceDescriptors, 0.6);
+      const results = detections.map((fd) =>
+        faceMatcher.findBestMatch(fd.descriptor)
+      );
 
       // 사이즈 변형 감지
       const resizedDetections = faceapi.resizeResults(
@@ -87,12 +121,19 @@ const WebcamCT = ({
           faceapi.draw.drawFaceLandmarks(canvas, resizedDetections); // 랜드마크 그리기
           faceapi.draw.drawFaceExpressions(canvas, resizedDetections); // 감정 그리기
           resizedDetections.forEach((detection) => {
-            const box = detection.detection.box;
-            const drawBox = new faceapi.draw.DrawBox(box, {
-              label: Math.round(detection.age) + ' year old ' + detection.gender
-            });
+            const drawBox = new faceapi.draw.DrawTextField(
+              Math.round(detection.age) + ' year old ' + detection.gender,
+              { x: 0, y: 0 },
+              { anchorPosition: AnchorPosition.BOTTOM_RIGHT }
+            );
             drawBox.draw(canvas);
           }); // 나이 및 성별 그리기
+          results.forEach((bestMatch, i) => {
+            const box = detections[i].detection.box;
+            const text = bestMatch.toString();
+            const drawBox = new faceapi.draw.DrawBox(box, { label: text });
+            drawBox.draw(canvas);
+          });
         }
       }
     }, 1000);
