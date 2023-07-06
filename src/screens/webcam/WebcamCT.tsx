@@ -53,11 +53,12 @@ const WebcamCT = ({
    */
   const handleOnPlay = async () => {
     const breads = [
-      'Bread',
-      'BreadWithGlasses',
-      'SmilingBread',
-      'SmilingBreadWithGlasses'
+      '상남자',
+      '안경쓴상남자',
+      '웃는상남자',
+      '안경쓰고웃는상남자'
     ]; // 특정 인물 사진 배열
+    const threshold = 0.38; // 임계점. 임계점을 기준으로 video 내의 얼굴과 라벨링된 사진이 매칭되는지 판단한다.
     const canvas = faceapi.createCanvasFromMedia(video); // 얼굴 인식 판별을 위한 canvas 생성
     const contents = document.getElementById('contents');
     contents && contents.append(canvas);
@@ -74,8 +75,8 @@ const WebcamCT = ({
     // 특정 인물 사진을 인식한 라벨링된 객체 생성
     const labeledFaceDescriptors = await Promise.all(
       breads.map(async (bread) => {
-        // const imgUrl = `/images/${bread}.jpeg`;
-        const imgUrl = `/images/${bread}.jpg`;
+        const imgUrl = `/images/${bread}.jpeg`;
+        // const imgUrl = `/images/${bread}.jpg`;
         const img = await faceapi.fetchImage(imgUrl);
 
         // 특정 인물 사진 인식 객체 생성
@@ -103,10 +104,15 @@ const WebcamCT = ({
         .withAgeAndGender() // 나이, 성별 예측
         .withFaceDescriptors();
 
-      // 매칭
-      const faceMatcher = new faceapi.FaceMatcher(labeledFaceDescriptors, 0.7);
-      const results = detections.map((fd) =>
-        faceMatcher.findBestMatch(fd.descriptor)
+      // 라벨링된 얼굴 디스트립터 및 임계점으로, video 내의 얼굴들과 매칭할 비교 인스턴스 생성
+      const faceMatcher = new faceapi.FaceMatcher(
+        labeledFaceDescriptors,
+        threshold
+      );
+
+      // 라벨링된 얼굴들과 video내의 얼굴들을 비교한 결과값 저장
+      const results = detections.map(({ descriptor }) =>
+        faceMatcher.findBestMatch(descriptor)
       );
 
       // 사이즈 변형 감지
@@ -122,7 +128,7 @@ const WebcamCT = ({
           context.clearRect(0, 0, canvas.width, canvas.height);
           faceapi.draw.drawDetections(canvas, resizedDetections); // 얼굴 박스 그리기
           faceapi.draw.drawFaceLandmarks(canvas, resizedDetections); // 랜드마크 그리기
-          faceapi.draw.drawFaceExpressions(canvas, resizedDetections); // 감정 그리기
+          faceapi.draw.drawFaceExpressions(canvas, resizedDetections); // 감정 쓰기
           resizedDetections.forEach(({ detection, age, gender }) => {
             const { x, y, width, height } = detection.box;
             const drawBox = new faceapi.draw.DrawTextField(
@@ -134,13 +140,14 @@ const WebcamCT = ({
               }
             );
             drawBox.draw(canvas);
-          }); // 나이 및 성별 그리기
+          }); // 나이 및 성별 쓰기
           results.forEach((bestMatch, i) => {
             const box = detections[i].detection.box;
             const text = bestMatch.toString();
             const drawBox = new faceapi.draw.DrawBox(box, { label: text });
             drawBox.draw(canvas);
-          }); // 특정 인물과 매칭될 시 이름 그리기
+            // TODO: threshold > bestMatch.distance 일 경우 얼굴 데이터 수집
+          }); // 라벨링된 얼굴과 매칭될 시 이름 쓰기
         }
       }
     }, 1000);
